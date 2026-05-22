@@ -1,4 +1,6 @@
 using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 
@@ -22,6 +24,20 @@ public class FeasibilityEndpointTests : IClassFixture<WebApplicationFactory<Prog
     }
 
     [Fact]
+    public async Task Get_MissingLatitude_Returns400WithCorrectSchema()
+    {
+        var response = await _client.GetAsync("/api/feasibility?longitude=-43.18298&radius=500");
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        body.GetProperty("code").GetString().Should().Be("400");
+        body.GetProperty("reason").GetString().Should().NotBeNullOrEmpty();
+        body.GetProperty("message").GetString().Should().Contain("latitude");
+        body.GetProperty("status").GetString().Should().Be("bad request");
+        body.GetProperty("timestamp").GetString().Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
     public async Task Get_InvalidRadius_Returns400()
     {
         var response = await _client.GetAsync(
@@ -39,6 +55,15 @@ public class FeasibilityEndpointTests : IClassFixture<WebApplicationFactory<Prog
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Headers.Contains("X-Request-Id").Should().BeTrue();
         response.Headers.Contains("X-Response-Time").Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Get_CoordinateWithTrailingZeros_Returns200()
+    {
+        var response = await _client.GetAsync(
+            "/api/feasibility?latitude=-22.91000&longitude=-43.18298&radius=1000");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]

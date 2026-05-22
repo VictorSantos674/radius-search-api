@@ -1,5 +1,4 @@
 using FluentValidation;
-using System.Globalization;
 
 namespace RadiusSearch.Application.UseCases.FindEquipmentByRadius;
 
@@ -10,13 +9,17 @@ public sealed class FindEquipmentByRadiusValidator
     {
         RuleFor(query => query.Latitude)
             .InclusiveBetween(-90, 90)
-            .WithMessage("latitude must be between -90 and 90")
+            .WithMessage("latitude must be between -90 and 90");
+
+        RuleFor(query => query.RawLatitude)
             .Must(HaveAtLeastFiveDecimalPlaces)
             .WithMessage("latitude must have at least 5 decimal places");
 
         RuleFor(query => query.Longitude)
             .InclusiveBetween(-180, 180)
-            .WithMessage("longitude must be between -180 and 180")
+            .WithMessage("longitude must be between -180 and 180");
+
+        RuleFor(query => query.RawLongitude)
             .Must(HaveAtLeastFiveDecimalPlaces)
             .WithMessage("longitude must have at least 5 decimal places");
 
@@ -33,11 +36,10 @@ public sealed class FindEquipmentByRadiusValidator
             .WithMessage("pageSize must be between 1 and 20");
     }
 
-    private static bool HaveAtLeastFiveDecimalPlaces(double value)
+    private static bool HaveAtLeastFiveDecimalPlaces(string raw)
     {
-        var text = value.ToString("G", CultureInfo.InvariantCulture);
-        var dotIndex = text.IndexOf('.');
+        var dotIndex = raw.IndexOf('.');
 
-        return dotIndex >= 0 && text.Length - dotIndex - 1 >= 5;
+        return dotIndex >= 0 && raw.Length - dotIndex - 1 >= 5;
     }
 }

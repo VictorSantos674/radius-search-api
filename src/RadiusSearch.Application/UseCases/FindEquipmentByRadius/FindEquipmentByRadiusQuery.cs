@@ -5,4 +5,6 @@ public sealed record FindEquipmentByRadiusQuery(
     double Longitude,
     int Radius,
     int Page = 1,
-    int PageSize = 20);
+    int PageSize = 20,
+    string RawLatitude = "",
+    string RawLongitude = "");

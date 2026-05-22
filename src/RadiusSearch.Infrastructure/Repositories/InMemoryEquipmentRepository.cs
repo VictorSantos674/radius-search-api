@@ -2,7 +2,6 @@ using System.Text.Json;
 using RadiusSearch.Domain.Entities;
 using RadiusSearch.Domain.Enums;
 using RadiusSearch.Domain.Repositories;
-using RadiusSearch.Domain.Services;
 using RadiusSearch.Domain.ValueObjects;
 using RadiusSearch.Infrastructure.Json;
 
@@ -17,19 +16,7 @@ public sealed class InMemoryEquipmentRepository : IEquipmentRepository
         _equipment = LoadDataset(datasetPath);
     }
 
-    public IEnumerable<(Equipment Equipment, double DistanceMeters)> FindWithinRadius(
-        Coordinate origin,
-        int radiusMeters)
-    {
-        return _equipment
-            .Where(equipment => equipment.IsAvailable())
-            .Select(equipment => (
-                Equipment: equipment,
-                DistanceMeters: HaversineService.CalculateDistanceInMeters(origin, equipment.Location)
-            ))
-            .Where(result => result.DistanceMeters <= radiusMeters)
-            .OrderBy(result => result.DistanceMeters);
-    }
+    public IEnumerable<Equipment> GetAll() => _equipment;
 
     private static IReadOnlyList<Equipment> LoadDataset(string path)
     {

@@ -1,4 +1,6 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
+using RadiusSearch.Api.Models;
 using RadiusSearch.Application.UseCases.FindEquipmentByRadius;
 
 namespace RadiusSearch.Api.Controllers;
@@ -17,8 +19,8 @@ public sealed class FeasibilityController : ControllerBase
     [HttpGet("feasibility")]
     [Produces("application/json")]
     public async Task<IActionResult> Get(
-        [FromQuery] double? latitude,
-        [FromQuery] double? longitude,
+        [FromQuery] string? latitude,
+        [FromQuery] string? longitude,
         [FromQuery] int? radius,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
@@ -39,27 +41,47 @@ public sealed class FeasibilityController : ControllerBase
             return MissingParam("radius");
         }
 
+        if (!double.TryParse(latitude, NumberStyles.Float, CultureInfo.InvariantCulture, out var lat))
+        {
+            return InvalidParam("latitude must be a valid float");
+        }
+
+        if (!double.TryParse(longitude, NumberStyles.Float, CultureInfo.InvariantCulture, out var lon))
+        {
+            return InvalidParam("longitude must be a valid float");
+        }
+
         var query = new FindEquipmentByRadiusQuery(
-            latitude.Value,
-            longitude.Value,
+            lat,
+            lon,
             radius.Value,
             page,
-            pageSize);
+            pageSize,
+            latitude,
+            longitude);
 
         var result = await _useCase.ExecuteAsync(query, cancellationToken);
 
         return Ok(result.Items);
     }
 
+    private static BadRequestObjectResult InvalidParam(string message)
+    {
+        return new BadRequestObjectResult(new ErrorResponse(
+            Code: "400",
+            Reason: "invalid field",
+            Message: message,
+            Status: "bad request",
+            Timestamp: DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")));
+    }
+
     private static BadRequestObjectResult MissingParam(string param)
     {
-        return new BadRequestObjectResult(new
-        {
-            code = "400",
-            reason = "empty field",
-            message = $"{param} is mandatory",
-            status = "bad request",
-            timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
-        });
+        return new BadRequestObjectResult(new ErrorResponse(
+            Code: "400",
+            Reason: "empty field",
+            Message: $"{param} is mandatory",
+            Status: "bad request",
+            Timestamp: DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")));
     }
 }

@@ -1,5 +1,4 @@
 using FluentAssertions;
-using RadiusSearch.Domain.ValueObjects;
 using RadiusSearch.Infrastructure.Repositories;
 
 namespace RadiusSearch.Tests.Infrastructure;
@@ -11,34 +10,30 @@ public class InMemoryEquipmentRepositoryTests
     private readonly InMemoryEquipmentRepository _sut = new(DatasetPath);
 
     [Fact]
-    public void FindWithinRadius_SmallRadius_ReturnsOnlyActiveAndReserved()
+    public void GetAll_LoadsDataset()
     {
-        var origin = new Coordinate(-22.910159, -43.182978);
+        var results = _sut.GetAll().ToList();
 
-        var results = _sut.FindWithinRadius(origin, radiusMeters: 1000).ToList();
-
-        results.Should().OnlyContain(result => result.Equipment.IsAvailable());
+        results.Should().NotBeEmpty();
     }
 
     [Fact]
-    public void FindWithinRadius_OrderedByDistance()
+    public void GetAll_LoadsValidCoordinates()
     {
-        var origin = new Coordinate(-22.910159, -43.182978);
+        var results = _sut.GetAll().ToList();
 
-        var distances = _sut.FindWithinRadius(origin, radiusMeters: 5000)
-            .Select(result => result.DistanceMeters)
-            .ToList();
-
-        distances.Should().BeInAscendingOrder();
+        results.Should().OnlyContain(equipment =>
+            equipment.Location.Latitude >= -90
+            && equipment.Location.Latitude <= 90
+            && equipment.Location.Longitude >= -180
+            && equipment.Location.Longitude <= 180);
     }
 
     [Fact]
-    public void FindWithinRadius_ZeroResults_WhenNothingIsNear()
+    public void GetAll_KeepsUnavailableEquipmentForApplicationFiltering()
     {
-        var middleOfOcean = new Coordinate(-10.00000, -140.00000);
+        var results = _sut.GetAll().ToList();
 
-        var results = _sut.FindWithinRadius(middleOfOcean, radiusMeters: 1000);
-
-        results.Should().BeEmpty();
+        results.Should().Contain(equipment => !equipment.IsAvailable());
     }
 }

@@ -1,6 +1,7 @@
 using FluentValidation;
 using RadiusSearch.Application.Common;
 using RadiusSearch.Domain.Repositories;
+using RadiusSearch.Domain.Services;
 using RadiusSearch.Domain.ValueObjects;
 
 namespace RadiusSearch.Application.UseCases.FindEquipmentByRadius;
@@ -27,13 +28,20 @@ public sealed class FindEquipmentByRadiusUseCase
         var origin = new Coordinate(query.Latitude, query.Longitude);
 
         var allMatches = _repository
-            .FindWithinRadius(origin, query.Radius)
+            .GetAll()
+            .Where(equipment => equipment.IsAvailable())
+            .Select(equipment => (
+                Equipment: equipment,
+                Distance: HaversineService.CalculateDistanceInMeters(origin, equipment.Location)
+            ))
+            .Where(result => result.Distance <= query.Radius)
+            .OrderBy(result => result.Distance)
             .Select(result => new FindEquipmentByRadiusResult(
                 Id: result.Equipment.Id,
                 Nome: result.Equipment.Name,
                 Latitude: result.Equipment.Location.Latitude,
                 Longitude: result.Equipment.Location.Longitude,
-                Radius: Math.Round(result.DistanceMeters, 2)))
+                Radius: Math.Round(result.Distance, 2)))
             .ToList();
 
         var paged = allMatches

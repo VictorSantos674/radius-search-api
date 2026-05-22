@@ -1,6 +1,6 @@
 using RadiusSearch.Api.Middleware;
-using RadiusSearch.Api.Models;
 using RadiusSearch.Application;
+using RadiusSearch.Domain.Repositories;
 using RadiusSearch.Infrastructure;
 using Serilog;
 
@@ -21,27 +21,7 @@ try
         .AddApplication()
         .AddInfrastructure(builder.Configuration);
 
-    builder.Services
-        .AddControllers()
-        .ConfigureApiBehaviorOptions(options =>
-        {
-            options.InvalidModelStateResponseFactory = context =>
-            {
-                var message = context.ModelState.Values
-                    .SelectMany(value => value.Errors)
-                    .Select(error => error.ErrorMessage)
-                    .FirstOrDefault() ?? "invalid request";
-
-                var response = new ErrorResponse(
-                    Code: "400",
-                    Reason: "validation error",
-                    Message: message,
-                    Status: "bad request",
-                    Timestamp: DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"));
-
-                return new Microsoft.AspNetCore.Mvc.BadRequestObjectResult(response);
-            };
-        });
+    builder.Services.AddControllers();
     builder.Services.AddHealthChecks();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
@@ -54,6 +34,21 @@ try
     });
     app.UseMiddleware<ErrorHandlingMiddleware>();
     app.UseMiddleware<RequestHeadersMiddleware>();
+    app.Use(async (context, next) =>
+    {
+        context.Response.OnStarting(() =>
+        {
+            if (context.Response.ContentType?.Contains("application/json") == true
+                && !context.Response.ContentType.Contains("charset"))
+            {
+                context.Response.ContentType = "application/json; charset=utf-8";
+            }
+
+            return Task.CompletedTask;
+        });
+
+        await next();
+    });
 
     if (app.Environment.IsDevelopment())
     {
@@ -65,6 +60,8 @@ try
 
     app.MapControllers();
     app.MapHealthChecks("/health");
+
+    _ = app.Services.GetRequiredService<IEquipmentRepository>();
 
     app.Run();
 }
