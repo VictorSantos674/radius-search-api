@@ -17,4 +17,10 @@
     <ProjectReference Include="..\RadiusSearch.Infrastructure\RadiusSearch.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="data\dataset_v2.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
