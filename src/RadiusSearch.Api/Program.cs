@@ -48,12 +48,12 @@ try
 
     var app = builder.Build();
 
-    app.UseMiddleware<ErrorHandlingMiddleware>();
-    app.UseMiddleware<RequestHeadersMiddleware>();
     app.UseSerilogRequestLogging(options =>
     {
         options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
     });
+    app.UseMiddleware<ErrorHandlingMiddleware>();
+    app.UseMiddleware<RequestHeadersMiddleware>();
 
     if (app.Environment.IsDevelopment())
     {
