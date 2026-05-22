@@ -140,7 +140,7 @@ Os testes unitários serão adicionados conforme as regras de domínio e aplica�
 - [x] API: endpoint principal e tratamento centralizado de erros
 - [x] Logging com Serilog e rotação de arquivo
 - [ ] Testes unitários das regras de negócio
-- [ ] Dockerfile
+- [x] Dockerfile
 - [ ] Documentação final de deploy
 
 ## Formato de Erro Previsto
