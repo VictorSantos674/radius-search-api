@@ -1,149 +1,116 @@
-# Radius Search API
+# radius-search-api
 
-API REST em .NET para consulta de viabilidade por proximidade geográfica. O serviço recebe uma coordenada e um raio em metros, calcula a distância até equipamentos CTO e retorna os registros elegíveis ordenados pela menor distância.
+API REST em .NET 8 (C#) para localizacao de equipamentos por raio de distancia geografica.
 
-Este projeto está sendo desenvolvido como parte de um teste técnico para vaga de Desenvolvedor de Software Pleno.
+Desenvolvida com arquitetura em camadas (DDD), Clean Code, FluentValidation, Serilog e suporte a containerizacao via Docker.
 
-## Objetivo
+---
 
-Disponibilizar um endpoint capaz de responder quais equipamentos do tipo CTO estão dentro de um raio informado, considerando:
+## Requisitos
 
-- cálculo de distância pela fórmula de Haversine;
-- filtragem por status permitidos;
-- ordenação por menor distância;
-- paginação com limite máximo de 20 itens por página;
-- dataset carregado em memória na inicialização da aplicação.
+| Ferramenta | Versao minima |
+|------------|---------------|
+| Docker     | 20.10+        |
+| .NET SDK   | 8.0 (apenas para rodar sem Docker) |
 
-## Stack
+---
 
-- .NET 8
-- ASP.NET Core Web API
-- C#
-- FluentValidation
-- Serilog
-- xUnit
-- FluentAssertions
+## Deploy com Docker (recomendado)
 
-## Arquitetura
+### 1. Clone o repositorio
 
-O projeto segue uma organização em camadas, separando responsabilidades de domínio, aplicação, infraestrutura e apresentação.
-
-```text
-src/
-  RadiusSearch.Api/             # Camada de apresentação HTTP
-  RadiusSearch.Application/     # Casos de uso, DTOs e validações
-  RadiusSearch.Domain/          # Entidades, value objects e regras de domínio
-  RadiusSearch.Infrastructure/  # Repositórios e integrações externas
-
-tests/
-  RadiusSearch.Tests/           # Testes unitários
+```bash
+git clone https://github.com/VictorSantos674/radius-search-api.git
+cd radius-search-api
 ```
 
-Dependências entre camadas:
+### 2. Build da imagem
 
-```text
-Api -> Application -> Domain
-Api -> Infrastructure -> Application/Domain
-Tests -> Domain/Application/Infrastructure
+```bash
+docker build -t radius-search-api .
 ```
 
-## Requisitos Funcionais
+### 3. Execute o container
 
-Endpoint principal previsto:
+```bash
+docker run -d \
+  --name radius-search-api \
+  -p 8080:8080 \
+  radius-search-api
+```
+
+### 4. Verifique se a API esta no ar
+
+```bash
+curl http://localhost:8080/health
+```
+
+Resposta esperada: `Healthy` com status `200 OK`.
+
+---
+
+## Deploy sem Docker
+
+### 1. Clone o repositorio
+
+```bash
+git clone https://github.com/VictorSantos674/radius-search-api.git
+cd radius-search-api
+```
+
+### 2. Restaure as dependencias
+
+```bash
+dotnet restore RadiusSearchApi.sln
+```
+
+### 3. Execute a API
+
+```bash
+dotnet run --project src/RadiusSearch.Api --configuration Release --urls http://localhost:5000
+```
+
+A API sobe em `http://localhost:5000`.
+
+---
+
+## Uso do endpoint principal
 
 ```http
-GET /api/feasibility?latitude=-23.556456&longitude=-46.635653&radius=100
+GET /api/feasibility?latitude={lat}&longitude={lon}&radius={metros}
 ```
 
-Resposta esperada:
+### Parametros
+
+| Parametro | Tipo    | Obrigatorio | Restricoes                               |
+|-----------|---------|-------------|-------------------------------------------|
+| latitude  | float   | Sim         | Entre -90 e 90, minimo 5 casas decimais   |
+| longitude | float   | Sim         | Entre -180 e 180, minimo 5 casas decimais |
+| radius    | integer | Sim         | Entre 10 e 1000 (metros)                  |
+| page      | integer | Nao         | Padrao: 1                                 |
+| pageSize  | integer | Nao         | Padrao: 20, maximo: 20                    |
+
+### Exemplo de requisicao
+
+```bash
+curl "http://localhost:8080/api/feasibility?latitude=-22.91016&longitude=-43.18298&radius=500"
+```
+
+### Exemplo de resposta - `200 OK`
 
 ```json
 [
   {
-    "id": 34,
-    "nome": "CTO-RJ-0004",
-    "latitude": -23.551,
-    "longitude": -46.632,
-    "radius": 15.56
+    "id": 496,
+    "nome": "CTO-RJO-CENTRO-0287",
+    "latitude": -22.910281,
+    "longitude": -43.182324,
+    "radius": 68.52
   }
 ]
 ```
 
-Endpoint de saúde:
-
-```http
-GET /health
-```
-
-## Validações Previstas
-
-- `latitude`: obrigatório, decimal com no mínimo 5 casas decimais, entre -90 e 90;
-- `longitude`: obrigatório, decimal com no mínimo 5 casas decimais, entre -180 e 180;
-- `radius`: obrigatório, inteiro, entre 10 e 1000 metros.
-
-## Executando Localmente
-
-Pré-requisitos:
-
-- .NET SDK 8 instalado;
-- dataset `dataset_v2.json` disponível no caminho que será configurado na etapa de infraestrutura.
-
-Restaurar dependências:
-
-```powershell
-dotnet restore RadiusSearchApi.sln
-```
-
-Compilar:
-
-```powershell
-dotnet build RadiusSearchApi.sln
-```
-
-Executar a API:
-
-```powershell
-dotnet run --project src/RadiusSearch.Api/RadiusSearch.Api.csproj
-```
-
-Com o perfil local padrão, a API fica disponível em:
-
-```text
-http://localhost:5237
-```
-
-Verificar saúde da aplicação:
-
-```powershell
-curl http://localhost:5237/health
-```
-
-## Testes
-
-Executar a suíte de testes:
-
-```powershell
-dotnet test RadiusSearchApi.sln
-```
-
-Os testes unitários serão adicionados conforme as regras de domínio e aplicação forem implementadas.
-
-## Status do Desenvolvimento
-
-- [x] Estrutura inicial da solution
-- [x] Projetos separados por camada
-- [x] Configuração inicial de injeção de dependência
-- [x] Health check configurado
-- [x] Domínio: entidades, value objects e cálculo de distância
-- [x] Infraestrutura: carregamento do dataset em memória
-- [x] Aplicação: caso de uso, DTOs e validações
-- [x] API: endpoint principal e tratamento centralizado de erros
-- [x] Logging com Serilog e rotação de arquivo
-- [ ] Testes unitários das regras de negócio
-- [x] Dockerfile
-- [ ] Documentação final de deploy
-
-## Formato de Erro Previsto
+### Exemplo de resposta - `400 Bad Request`
 
 ```json
 {
@@ -151,16 +118,59 @@ Os testes unitários serão adicionados conforme as regras de domínio e aplica�
   "reason": "empty field",
   "message": "latitude is mandatory",
   "status": "bad request",
-  "timestamp": "2025-02-13T14:25:00Z"
+  "timestamp": "2026-05-23T10:00:00Z"
 }
 ```
 
-## Headers de Resposta Previstos
+### Headers retornados
 
-- `Content-Type: application/json; charset=utf-8`
-- `X-Response-Time: <ms>`
-- `X-Request-Id: <UUID gerado na requisição>`
+| Header          | Descricao                        |
+|-----------------|----------------------------------|
+| X-Request-Id    | UUID unico gerado por requisicao |
+| X-Response-Time | Tempo de resposta em ms          |
 
-## Licença
+---
 
-Projeto desenvolvido para fins de avaliação técnica.
+## Health check
+
+```bash
+curl http://localhost:8080/health
+```
+
+---
+
+## Testes
+
+```bash
+dotnet test RadiusSearchApi.sln
+```
+
+---
+
+## Arquitetura
+
+```text
+src/
+├── RadiusSearch.Domain         # Entidades, value objects, interfaces, Haversine
+├── RadiusSearch.Application    # Use cases, validacoes, DTOs
+├── RadiusSearch.Infrastructure # Repositorio in-memory, carregamento do dataset
+└── RadiusSearch.Api            # Controllers, middlewares, pipeline HTTP
+tests/
+└── RadiusSearch.Tests          # Testes unitarios e de integracao
+```
+
+---
+
+## Logs
+
+Os logs sao gravados em `logs/api-.log` com rotacao automatica a cada 1MB (maximo 10 arquivos retidos). Sao registrados: request recebida, tempo de execucao e erros.
+
+Ao rodar com Docker, os logs ficam dentro do container. Para persistir externamente:
+
+```bash
+docker run -d \
+  --name radius-search-api \
+  -p 8080:8080 \
+  -v $(pwd)/logs:/app/logs \
+  radius-search-api
+```
