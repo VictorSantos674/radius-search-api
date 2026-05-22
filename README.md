@@ -134,7 +134,7 @@ Os testes unitários serão adicionados conforme as regras de domínio e aplica�
 - [x] Projetos separados por camada
 - [x] Configuração inicial de injeção de dependência
 - [x] Health check configurado
-- [ ] Domínio: entidades, value objects e cálculo de distância
+- [x] Domínio: entidades, value objects e cálculo de distância
 - [ ] Infraestrutura: carregamento do dataset em memória
 - [ ] Aplicação: caso de uso, DTOs e validações
 - [ ] API: endpoint principal e tratamento centralizado de erros
