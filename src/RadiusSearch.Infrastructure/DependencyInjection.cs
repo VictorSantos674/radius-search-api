@@ -14,8 +14,12 @@ public static class DependencyInjection
         var datasetPath = configuration["Dataset:Path"]
             ?? throw new InvalidOperationException("Dataset:Path not configured.");
 
+        var resolvedDatasetPath = Path.IsPathRooted(datasetPath)
+            ? datasetPath
+            : Path.Combine(AppContext.BaseDirectory, datasetPath);
+
         services.AddSingleton<IEquipmentRepository>(
-            _ => new InMemoryEquipmentRepository(datasetPath));
+            _ => new InMemoryEquipmentRepository(resolvedDatasetPath));
 
         return services;
     }

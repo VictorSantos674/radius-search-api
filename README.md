@@ -137,7 +137,7 @@ Os testes unitários serão adicionados conforme as regras de domínio e aplica�
 - [x] Domínio: entidades, value objects e cálculo de distância
 - [x] Infraestrutura: carregamento do dataset em memória
 - [x] Aplicação: caso de uso, DTOs e validações
-- [ ] API: endpoint principal e tratamento centralizado de erros
+- [x] API: endpoint principal e tratamento centralizado de erros
 - [ ] Logging com Serilog e rotação de arquivo
 - [ ] Testes unitários das regras de negócio
 - [ ] Dockerfile
