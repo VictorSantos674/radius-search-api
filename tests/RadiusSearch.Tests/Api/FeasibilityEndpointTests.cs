@@ -58,6 +58,17 @@ public class FeasibilityEndpointTests : IClassFixture<WebApplicationFactory<Prog
     }
 
     [Fact]
+    public async Task Get_ValidRequest_Returns200WithCorrectContentType()
+    {
+        var response = await _client.GetAsync(
+            "/api/feasibility?latitude=-22.91016&longitude=-43.18298&radius=1000");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType!.MediaType.Should().Be("application/json");
+        response.Content.Headers.ContentType.CharSet.Should().Be("utf-8");
+    }
+
+    [Fact]
     public async Task Get_CoordinateWithTrailingZeros_Returns200()
     {
         var response = await _client.GetAsync(
