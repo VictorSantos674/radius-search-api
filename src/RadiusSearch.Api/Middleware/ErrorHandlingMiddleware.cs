@@ -29,7 +29,11 @@ public sealed class ErrorHandlingMiddleware
         }
         catch (ValidationException ex)
         {
-            _logger.LogWarning("Validation failed: {Errors}", ex.Message);
+            _logger.LogWarning(
+                "Validation failed for {Path}: {Errors}",
+                context.Request.Path,
+                string.Join("; ", ex.Errors.Select(error => error.ErrorMessage)));
+
             await WriteErrorAsync(
                 context,
                 HttpStatusCode.BadRequest,
@@ -40,7 +44,12 @@ public sealed class ErrorHandlingMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unhandled exception");
+            _logger.LogError(
+                ex,
+                "Unhandled exception on {Method} {Path}",
+                context.Request.Method,
+                context.Request.Path);
+
             await WriteErrorAsync(
                 context,
                 HttpStatusCode.InternalServerError,
